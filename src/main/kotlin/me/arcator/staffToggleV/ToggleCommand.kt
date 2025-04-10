@@ -1,30 +1,84 @@
 package me.arcator.staffToggleV
 
+import com.electronwill.nightconfig.core.file.FileConfig
 import com.velocitypowered.api.command.SimpleCommand
 import com.velocitypowered.api.proxy.Player
+import java.time.Duration
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.luckperms.api.LuckPermsProvider
+import net.luckperms.api.node.types.InheritanceNode
 
-class ToggleCommand : SimpleCommand {
+class ToggleCommand(
+    private val config: FileConfig
+) : SimpleCommand {
     override fun execute(invocation: SimpleCommand.Invocation) {
-        val source = invocation.source()
-        if (source !is Player) {
-            source.sendMessage(Component.text("Not a player!", NamedTextColor.RED))
+        val player = invocation.source()
+        if (player !is Player) {
+            player.sendMessage(
+                Component.text(
+                    config.get<String>("messages.notPlayer"),
+                    NamedTextColor.RED,
+                ),
+            )
             return
         }
 
+        if (!player.hasPermission("stafftoggle.toggle")) {
+            player.sendMessage(
+                Component.text(
+                    config.get<String>("messages.noPerm"),
+                    NamedTextColor.RED,
+                ),
+            )
+            return
+        }
 
-        // Get the arguments after the command alias
-        val args = invocation.arguments()
+        val arg = invocation.arguments().firstOrNull()
+        val group = config.get<String>("settings.adminGroup")
 
-        source.sendMessage(Component.text("Hello World!", NamedTextColor.AQUA))
+        if (arg.equals("off", true)) {
+            LuckPermsProvider.get().userManager.modifyUser(player.uniqueId) { user ->
+                // 10L is given arbitrarily to mark the node as temporary
+                user.data().remove(InheritanceNode.builder(group).expiry(10L).build())
+            }
+            player.sendMessage(Component.text("Removed parent group $group"))
+            return
+        }
+        if (arg.equals("on", true)) {
+            if (!player.hasPermission("luckperms.user.parent.addtemp")) {
+                player.sendMessage(
+                    Component.text(
+                        config.get<String>("messages.noPerm"),
+                        NamedTextColor.RED,
+                    ),
+                )
+                return
+            }
+
+            var time = config.getInt("settings.defaultMins")
+            if (invocation.arguments().size >= 2) {
+                try {
+                    time = invocation.arguments().last().toInt()
+                } catch (_: NumberFormatException) {
+                    player.sendMessage(Component.text("Invalid argument."))
+                }
+            }
+
+            player.sendMessage(Component.text("Add parent group $group for $time mins"))
+            LuckPermsProvider.get().userManager.modifyUser(player.uniqueId) { user ->
+                user.data().add(
+                    InheritanceNode.builder(group).expiry(Duration.ofMinutes(time.toLong()))
+                        .build(),
+                )
+            }
+            return
+        }
+
+        player.sendMessage(Component.text(config.get<String>("messages.help")))
     }
 
-    override fun hasPermission(invocation: SimpleCommand.Invocation): Boolean {
-        return invocation.source().hasPermission("stafftoggle.toggle")
-    }
-
-    override fun suggest(invocation: SimpleCommand.Invocation?): MutableList<String?> {
-        return mutableListOf("on", "off")
+    override fun suggest(invocation: SimpleCommand.Invocation?): List<String> {
+        return listOf<String>("on", "off")
     }
 }
