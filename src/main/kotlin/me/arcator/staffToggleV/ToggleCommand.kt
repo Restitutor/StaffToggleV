@@ -79,6 +79,16 @@ class ToggleCommand(
     }
 
     override fun suggest(invocation: SimpleCommand.Invocation?): List<String> {
-        return listOf<String>("on", "off")
+        if(invocation == null) return emptyList();
+
+        val args: Array<out String> = invocation.arguments();
+
+        val result = mutableListOf<String>();
+        if(args.size == 1) {
+            if("on".startsWith(args[0])) result.add("on");
+            if("off".startsWith(args[0])) result.add("off");
+        }
+
+        return result;
     }
 }
