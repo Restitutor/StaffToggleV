@@ -9,27 +9,19 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.luckperms.api.LuckPermsProvider
 import net.luckperms.api.node.types.InheritanceNode
 
-class ToggleCommand(
-    private val config: FileConfig
-) : SimpleCommand {
+class ToggleCommand(private val config: FileConfig) : SimpleCommand {
     override fun execute(invocation: SimpleCommand.Invocation) {
         val player = invocation.source()
         if (player !is Player) {
             player.sendMessage(
-                Component.text(
-                    config.get<String>("messages.notPlayer"),
-                    NamedTextColor.RED,
-                ),
+                Component.text(config.get<String>("messages.notPlayer"), NamedTextColor.RED)
             )
             return
         }
 
         if (!player.hasPermission("stafftoggle.toggle")) {
             player.sendMessage(
-                Component.text(
-                    config.get<String>("messages.noPerm"),
-                    NamedTextColor.RED,
-                ),
+                Component.text(config.get<String>("messages.noPerm"), NamedTextColor.RED)
             )
             return
         }
@@ -48,10 +40,7 @@ class ToggleCommand(
         if (arg.equals("on", true)) {
             if (!player.hasPermission("luckperms.user.parent.addtemp")) {
                 player.sendMessage(
-                    Component.text(
-                        config.get<String>("messages.noPerm"),
-                        NamedTextColor.RED,
-                    ),
+                    Component.text(config.get<String>("messages.noPerm"), NamedTextColor.RED)
                 )
                 return
             }
@@ -67,10 +56,13 @@ class ToggleCommand(
 
             player.sendMessage(Component.text("Add parent group $group for $time mins"))
             LuckPermsProvider.get().userManager.modifyUser(player.uniqueId) { user ->
-                user.data().add(
-                    InheritanceNode.builder(group).expiry(Duration.ofMinutes(time.toLong()))
-                        .build(),
-                )
+                user
+                    .data()
+                    .add(
+                        InheritanceNode.builder(group)
+                            .expiry(Duration.ofMinutes(time.toLong()))
+                            .build()
+                    )
             }
             return
         }
@@ -79,16 +71,16 @@ class ToggleCommand(
     }
 
     override fun suggest(invocation: SimpleCommand.Invocation?): List<String> {
-        if(invocation == null) return emptyList();
+        if (invocation == null) return emptyList()
 
-        val args: Array<out String> = invocation.arguments();
+        val args: Array<out String> = invocation.arguments()
 
-        val result = mutableListOf<String>();
-        if(args.size == 1) {
-            if("on".startsWith(args[0])) result.add("on");
-            if("off".startsWith(args[0])) result.add("off");
+        val result = mutableListOf<String>()
+        if (args.size == 1) {
+            if ("on".startsWith(args[0])) result.add("on")
+            if ("off".startsWith(args[0])) result.add("off")
         }
 
-        return result;
+        return result
     }
 }

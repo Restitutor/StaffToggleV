@@ -11,21 +11,18 @@ import java.nio.file.Files
 import java.nio.file.Path
 import org.slf4j.Logger
 
-@Plugin(
-    id = "stafftogglev", name = "StaffToggleV", version = "1.0.0",
-)
-class StaffToggleV @Inject constructor(
+@Plugin(id = "stafftogglev", name = "StaffToggleV", version = "1.0.0")
+class StaffToggleV
+@Inject
+constructor(
     private val proxy: ProxyServer,
     private val logger: Logger,
-    @DataDirectory private val dataDirectory: Path
+    @DataDirectory private val dataDirectory: Path,
 ) {
     @Subscribe
     fun onProxyInitialization(event: ProxyInitializeEvent) {
         val commandMeta =
-            proxy.commandManager.metaBuilder("staff")
-                .aliases("stafftoggle")
-                .plugin(this)
-                .build()
+            proxy.commandManager.metaBuilder("staff").aliases("stafftoggle").plugin(this).build()
 
         proxy.commandManager.register(commandMeta, ToggleCommand(getConfig()))
     }
@@ -40,9 +37,11 @@ class StaffToggleV @Inject constructor(
             logger.info("Default config.yml created at: {}", configFile.toAbsolutePath())
         }
 
-        val config = FileConfig.builder(configFile).defaultData(
-            javaClass.getResource("/config.toml"),
-        ).autosave().build()
+        val config =
+            FileConfig.builder(configFile)
+                .defaultData(javaClass.getResource("/config.toml"))
+                .autosave()
+                .build()
         config.load()
         return config
     }
